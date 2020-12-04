@@ -12,6 +12,7 @@ export const colors = {
   red: "\x1b[31m",
   magenta: "\x1b[35m",
   white: "\x1b[37m",
+  cyan: "\x1b[36m",
 };
 
 export type Modifier = keyof typeof modifiers;
