@@ -18,3 +18,7 @@ export const result = (message: string, result: unknown) => {
 };
 
 export const text = console.log;
+
+export const error = (message: string) => {
+  console.log(`${colors.red}${message}${modifiers.reset}`);
+};
