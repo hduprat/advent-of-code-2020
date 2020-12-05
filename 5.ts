@@ -29,8 +29,12 @@ const getSortedSeatIDs = (input: string[]): number[] => {
   return decodedBoardingPasses;
 };
 
-const getHighestSeatID = (input: string[]): number => {
-  return getSortedSeatIDs(input)[0];
+const findMyPlace = (sortedSeatIDs: number[]): number => {
+  for (let i = 0; i < sortedSeatIDs.length - 1; i++) {
+    const id = sortedSeatIDs[i];
+    if (sortedSeatIDs[i + 1] === id - 2) return id - 1;
+  }
+  return sortedSeatIDs[0];
 };
 
 const playScenario = async (path: string) => {
@@ -40,20 +44,14 @@ const playScenario = async (path: string) => {
     "First exercise: get highest seat ID from a list of boarding passes.",
     "green"
   );
-  const seatID = getHighestSeatID(lines);
-  result("The highest seat ID is", seatID);
+  const seatIDs = getSortedSeatIDs(lines);
+  result("The highest seat ID is", seatIDs[0]);
 
-  // title(
-  //   "Second exercise: count valid passwords (North Pole included) with correct value format.",
-  //   "green"
-  // );
-  // const validPasswordsCountWithValueFormat = countValidPasswords(
-  //   lines,
-  //   validateFieldsHaveCorrectValues
-  // );
-  // text(
-  //   `There are ${colors.yellow}${modifiers.bold}${validPasswordsCountWithValueFormat}${colors.white} valid passwords${modifiers.reset} in the file.`
-  // );
+  if (path.includes("example")) return;
+
+  title("Second exercise: find my place!", "green");
+  const myID = findMyPlace(seatIDs);
+  result("The ID of my place is", myID);
 };
 
 async function main() {
