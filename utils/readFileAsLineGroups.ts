@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as readline from "readline";
 
-const LINE_SEPARATOR = "";
+const LINE_SEPARATOR = "\n";
 export const readFileAsLineGroups = async (path: string): Promise<string[]> =>
   new Promise<string[]>((resolve) => {
     const fileBuffer: string[] = [];
@@ -15,7 +15,8 @@ export const readFileAsLineGroups = async (path: string): Promise<string[]> =>
         lineBuffer = "";
         return;
       }
-      lineBuffer += line + LINE_SEPARATOR;
+      if (lineBuffer !== "") lineBuffer += LINE_SEPARATOR;
+      lineBuffer += line;
     });
 
     lineReader.on("close", () => {
