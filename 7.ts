@@ -1,4 +1,4 @@
-import { lineBreak, result, text, title } from "./utils/console";
+import { lineBreak, text, title } from "./utils/console";
 import { colors, modifiers } from "./utils/consoleColors";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
 
@@ -53,6 +53,15 @@ const countCompatibleBagColors = (ruleSet: RuleSet): number => {
   }, 0);
 };
 
+const countBagsInside = (color: string, ruleSet: RuleSet): number => {
+  const colorRule = ruleSet[color];
+  if (colorRule.length === 0) return 0;
+  return colorRule.reduce(
+    (sum, bag) => sum + bag.count * (1 + countBagsInside(bag.color, ruleSet)),
+    0
+  );
+};
+
 const playScenario = async (path: string) => {
   const lines = await getLinesOfFile(path);
   const ruleSet = generateRuleSet(lines);
@@ -64,6 +73,15 @@ const playScenario = async (path: string) => {
   const compatibleCount = countCompatibleBagColors(ruleSet);
   text(
     `${modifiers.bold}${colors.yellow}${compatibleCount}${modifiers.reset} bags can contain shiny gold bags.`
+  );
+
+  title(
+    `Second exercise: how many bag do I have in my ${colors.yellow}shiny gold bag${colors.green}?`,
+    "green"
+  );
+  const totalBagCount = countBagsInside("shiny gold", ruleSet);
+  text(
+    `My shiny gold bag contains ${modifiers.bold}${colors.yellow}${totalBagCount}${modifiers.reset} bags 😱`
   );
 };
 
