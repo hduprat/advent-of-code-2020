@@ -2,9 +2,25 @@ import { lineBreak, result, text, title } from "./utils/console";
 import { colors, modifiers } from "./utils/consoleColors";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
 
+class InfiniteLoopError extends Error {
+  atLine: number;
+  accValue: number;
+
+  constructor(atLine: number, accValue: number) {
+    super("Infinite loop error");
+    this.atLine = atLine;
+    this.accValue = accValue;
+  }
+}
+
 interface Instruction {
   type: string;
   value: number;
+}
+
+interface ProgramState {
+  idx: number;
+  acc: number;
 }
 
 const generateInstruction = (line: string): Instruction => {
@@ -15,9 +31,9 @@ const generateInstruction = (line: string): Instruction => {
   };
 };
 
-const detectInfiniteLoop = (
+function* generateProgram(
   instructionList: Instruction[]
-): { atLine: number; accValue: number } => {
+): Generator<ProgramState, number, unknown> {
   let idx = 0;
   let acc = 0;
   const linesPassed = new Set<number>();
@@ -28,10 +44,7 @@ const detectInfiniteLoop = (
       text(
         `Instruction: ${colors.red}${instruction.type} ${instruction.value}${modifiers.reset} (line ${idx}) - Accumulator value: ${colors.magenta}${acc}${modifiers.reset}`
       );
-      return {
-        atLine: idx,
-        accValue: acc,
-      };
+      throw new InfiniteLoopError(idx, acc);
     }
     text(
       `Instruction: ${colors.green}${instruction.type} ${instruction.value}${modifiers.reset} (line ${idx}) - Accumulator value: ${colors.magenta}${acc}${modifiers.reset}`
@@ -47,8 +60,23 @@ const detectInfiniteLoop = (
         break;
       default:
         idx++;
+        break;
     }
+    if (idx >= instructionList.length) return acc;
+    yield {
+      acc,
+      idx,
+    };
   }
+}
+
+const runProgram = (instructionList: Instruction[]): number => {
+  const program = generateProgram(instructionList);
+  let state = program.next();
+  while (!state.done) {
+    state = program.next();
+  }
+  return state.value;
 };
 
 const playScenario = async (path: string) => {
@@ -59,8 +87,11 @@ const playScenario = async (path: string) => {
     `First exercise: what is the number in the accumulator right before the start of the infinite loop?`,
     "green"
   );
-  const loopError = detectInfiniteLoop(instructionList);
-  result("Value of accumulator when infinite loop begins:", loopError.accValue);
+  try {
+    runProgram(instructionList);
+  } catch (error) {
+    result("Value of accumulator when infinite loop begins:", error.accValue);
+  }
 };
 
 async function main() {
@@ -68,12 +99,12 @@ async function main() {
   await playScenario("input/8.example");
   lineBreak();
 
-  title("----------------------------------");
-  lineBreak();
+  // title("----------------------------------");
+  // lineBreak();
 
-  title("Real scenario", "cyan");
-  await playScenario("input/8");
-  lineBreak();
+  // title("Real scenario", "cyan");
+  // await playScenario("input/8");
+  // lineBreak();
 }
 
 main();
