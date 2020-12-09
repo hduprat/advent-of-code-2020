@@ -1,5 +1,23 @@
-import { lineBreak, result, title } from "./utils/console";
+import { lineBreak, result, text, title } from "./utils/console";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
+
+const findRangeAddingUpTo = (
+  n: number,
+  allNumbers: number[]
+): { minIndex: number; maxIndex: number } => {
+  for (let i = 0; i < allNumbers.length - 1; i++) {
+    let sum = allNumbers[i];
+    if (sum === n) continue;
+    let j = i + 1;
+    while (sum < n) {
+      sum += allNumbers[j];
+      j++;
+    }
+    if (sum === n) return { minIndex: i, maxIndex: j };
+  }
+
+  return { minIndex: -1, maxIndex: -1 };
+};
 
 const isSumOfTwoNumbersIn = (n: number, allNumbers: number[]): boolean => {
   for (let a of allNumbers) {
@@ -33,6 +51,16 @@ const playScenario = async (path: string) => {
     `The first number that is not the sum of two of the ${preambleLength} previous ones is`,
     result1
   );
+  lineBreak();
+
+  title(
+    `Second exercise: find a contiguous set of numbers that add up to ${result1}, then sum the smallest and the largest`,
+    "green"
+  );
+  const { minIndex, maxIndex } = findRangeAddingUpTo(result1, numbers);
+  const range = numbers.slice(minIndex, maxIndex);
+  text(`The range of numbers that add up to ${result1} is`, range);
+  result(`The result is`, Math.min(...range) + Math.max(...range));
   lineBreak();
 };
 
