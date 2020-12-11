@@ -42,6 +42,27 @@ const checkAdjacentSeat: SeatCheckRuleFunction = (
   ifCheckCallback(newPoint);
 };
 
+const checkFirstVisibleSeat: SeatCheckRuleFunction = (
+  seatingArea,
+  point,
+  delta,
+  ifCheckCallback
+) => {
+  let n = 1;
+  while (true) {
+    const { x, y }: Point = {
+      x: point.x + n * delta.x,
+      y: point.y + n * delta.y,
+    };
+    if (x < 0) return;
+    if (y < 0) return;
+    if (x >= seatingArea.length) return;
+    if (y >= seatingArea.length) return;
+    if (seatingArea[y][x] !== ".") return ifCheckCallback({ x, y });
+    n++;
+  }
+};
+
 const createOccupationMap = (
   seatingArea: string[],
   visibilityRule: SeatCheckRuleFunction
@@ -173,10 +194,24 @@ const playScenario = async (path: string) => {
   do {
     seats = seatingArea.next();
   } while (!seats.done);
-  const newSeats = seats.value;
-  const count = countOccupiedSeats(newSeats);
+  const count = countOccupiedSeats(seats.value);
   text(
     `There are ${modifiers.bold}${colors.yellow}${count}${modifiers.reset} occupied seats.`
+  );
+
+  title(
+    `Second exercise: count occupied seats when seating becomes stable with new rules`,
+    "green"
+  );
+  lineBreak();
+  const otherRuleSeatingArea = gameOfSeating(lines, checkFirstVisibleSeat, 5);
+  let otherRuleSeats;
+  do {
+    otherRuleSeats = otherRuleSeatingArea.next();
+  } while (!otherRuleSeats.done);
+  const otherRuleCount = countOccupiedSeats(otherRuleSeats.value);
+  text(
+    `There are ${modifiers.bold}${colors.yellow}${otherRuleCount}${modifiers.reset} occupied seats.`
   );
 };
 
