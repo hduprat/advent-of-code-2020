@@ -4,6 +4,11 @@ import { getLinesOfFile } from "./utils/getLinesOfFile";
 
 const OCCUPIED_SEAT_REGEX = /#/g;
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 const displaySeatingArea = (input: string[]): void => {
   input.forEach((line) => text(line));
 };
@@ -16,23 +21,90 @@ const countOccupiedSeats = (seatingArea: string[]): number =>
     );
   }, 0);
 
-const createOccupationMap = (seatingArea: string[]): number[][] => {
+type SeatCheckRuleFunction = (
+  seatingArea: string[],
+  point: Point,
+  delta: Point,
+  ifCheckCallback: (point: Point) => void
+) => void;
+
+const checkAdjacentSeat: SeatCheckRuleFunction = (
+  seatingArea,
+  point,
+  delta,
+  ifCheckCallback
+) => {
+  const newPoint: Point = { x: point.x + delta.x, y: point.y + delta.y };
+  if (newPoint.x < 0) return;
+  if (newPoint.y < 0) return;
+  if (newPoint.x >= seatingArea.length) return;
+  if (newPoint.y >= seatingArea.length) return;
+  ifCheckCallback(newPoint);
+};
+
+const createOccupationMap = (
+  seatingArea: string[],
+  visibilityRule: SeatCheckRuleFunction
+): number[][] => {
   const resultMap = seatingArea.map((line) =>
     new Array<number>(line.length).fill(0)
   );
 
+  const incrementMapPoint = (p: Point) => {
+    resultMap[p.y][p.x]++;
+  };
+
   seatingArea.forEach((line, y) => {
     for (let x = 0; x < line.length; x++) {
       if (line[x] === "#") {
-        if (x > 0) resultMap[y][x - 1]++;
-        if (x > 0 && y > 0) resultMap[y - 1][x - 1]++;
-        if (y > 0) resultMap[y - 1][x]++;
-        if (x < line.length - 1 && y > 0) resultMap[y - 1][x + 1]++;
-        if (x < line.length - 1) resultMap[y][x + 1]++;
-        if (x < line.length - 1 && y < seatingArea.length - 1)
-          resultMap[y + 1][x + 1]++;
-        if (y < seatingArea.length - 1) resultMap[y + 1][x]++;
-        if (x > 0 && y < seatingArea.length - 1) resultMap[y + 1][x - 1]++;
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: 0, y: 1 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: 1, y: 1 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: 1, y: 0 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: 1, y: -1 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: 0, y: -1 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: -1, y: -1 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: -1, y: 0 },
+          incrementMapPoint
+        );
+        visibilityRule(
+          seatingArea,
+          { x, y },
+          { x: -1, y: 1 },
+          incrementMapPoint
+        );
       }
     }
   });
@@ -41,13 +113,15 @@ const createOccupationMap = (seatingArea: string[]): number[][] => {
 
 const changeSeatOccupation = (
   seatingArea: string[],
-  occupationMap: number[][]
+  occupationMap: number[][],
+  abandonSeatThreshold: number = 4
 ): string[] => {
   const newSeatingArea = seatingArea.map((line, y) => {
     let newLine = "";
     for (let x = 0; x < line.length; x++) {
       if (line[x] === "L" && occupationMap[y][x] === 0) newLine += "#";
-      else if (line[x] === "#" && occupationMap[y][x] >= 4) newLine += "L";
+      else if (line[x] === "#" && occupationMap[y][x] >= abandonSeatThreshold)
+        newLine += "L";
       else newLine += line[x];
     }
     return newLine;
@@ -57,12 +131,18 @@ const changeSeatOccupation = (
 };
 
 function* gameOfSeating(
-  initialSeatingArea: string[]
+  initialSeatingArea: string[],
+  visibilityRule: SeatCheckRuleFunction,
+  abandonSeatThreshold: number = 4
 ): Generator<string[], string[]> {
   let seatingArea = [...initialSeatingArea];
   while (true) {
-    const occupationMap = createOccupationMap(seatingArea);
-    const newSeats = changeSeatOccupation(seatingArea, occupationMap);
+    const occupationMap = createOccupationMap(seatingArea, visibilityRule);
+    const newSeats = changeSeatOccupation(
+      seatingArea,
+      occupationMap,
+      abandonSeatThreshold
+    );
     lineBreak();
     displaySeatingArea(newSeats);
     if (
@@ -88,7 +168,7 @@ const playScenario = async (path: string) => {
     "green"
   );
   lineBreak();
-  const seatingArea = gameOfSeating(lines);
+  const seatingArea = gameOfSeating(lines, checkAdjacentSeat, 4);
   let seats;
   do {
     seats = seatingArea.next();
