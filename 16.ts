@@ -88,16 +88,83 @@ const sortValidAndInvalidTickets = (
     { validTickets: [], invalidValues: [] }
   );
 
+const areAllTicketsInFieldCompliantToRule = (
+  tickets: number[][],
+  fieldIndex: number,
+  rule: RangeRule
+) =>
+  tickets.reduce(
+    (areAllTicketsInField, ticket) =>
+      areAllTicketsInField &&
+      rule.ranges.reduce(
+        (compliesToRule, range) =>
+          compliesToRule || ticket[fieldIndex].in(range),
+        false
+      ),
+    true
+  );
+
+const getPotentialRuleNames = (
+  tickets: number[][],
+  fieldIndex: number,
+  rules: RangeRule[]
+) =>
+  rules.reduce(
+    (ruleNames, rule) =>
+      areAllTicketsInFieldCompliantToRule(tickets, fieldIndex, rule)
+        ? [...ruleNames, rule.name]
+        : ruleNames,
+    [] as string[]
+  );
+
+const generateColumnToIndexMap = (tickets: number[][], rules: RangeRule[]) => {
+  let columnsPotentialRuleNames = rules.map((_, index) =>
+    getPotentialRuleNames(tickets, index, rules)
+  );
+  const columnToIndex = new Map<string, number>();
+  let colIndex: number = -1;
+
+  while (
+    (colIndex = columnsPotentialRuleNames.findIndex(
+      (column) => column.length === 1
+    )) >= 0
+  ) {
+    columnToIndex.set(columnsPotentialRuleNames[colIndex][0], colIndex);
+    columnsPotentialRuleNames = columnsPotentialRuleNames.map((column) =>
+      column.filter(
+        (fieldName) => fieldName !== columnsPotentialRuleNames[colIndex][0]
+      )
+    );
+  }
+
+  text(columnToIndex);
+  return columnToIndex;
+};
+
 const playScenario = async (path: string) => {
   const lines = await getLinesOfFile(path);
-  const { rules, nearbyTickets } = processInput(lines);
-  const { invalidValues } = sortValidAndInvalidTickets(nearbyTickets, rules);
-  text(invalidValues);
+  const { rules, myTicket, nearbyTickets } = processInput(lines);
+  const { invalidValues, validTickets } = sortValidAndInvalidTickets(
+    nearbyTickets,
+    rules
+  );
 
   title(`First exercise: get the ticket scanning error rate.`, "green");
   const n = invalidValues.reduce((sum, value) => sum + value, 0);
   result("The ticket scanning error rate is", n);
   lineBreak();
+
+  title(
+    `Second exercise: multiply the departure values of my ticket.`,
+    "green"
+  );
+  const columnToIndex = generateColumnToIndexMap(validTickets, rules);
+  let res = 1;
+  columnToIndex.forEach((val, key) => {
+    if (key.startsWith("departure")) res *= myTicket[val];
+  });
+
+  text(res);
 };
 
 async function main() {
