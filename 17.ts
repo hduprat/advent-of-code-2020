@@ -57,21 +57,16 @@ const getNeighborMap = (conway: ConwayMap): NeighborMap => {
   return neighborMap;
 };
 
-const create3DConway = (input: string[]): ConwayMap => {
+const createConway = (input: string[], dims: number = 3): ConwayMap => {
+  if (dims < 2)
+    throw new Error("Sorry, we cannot Conway in one dimension here!");
   const conway = new Map<string, boolean>();
   input.forEach((line, y) => {
     for (let x = 0; x < line.length; x++) {
-      conway.set([x, y, 0].join(","), line[x] === "#");
-    }
-  });
-  return conway;
-};
-
-const create4DConway = (input: string[]): ConwayMap => {
-  const conway = new Map<string, boolean>();
-  input.forEach((line, y) => {
-    for (let x = 0; x < line.length; x++) {
-      conway.set([x, y, 0, 0].join(","), line[x] === "#");
+      conway.set(
+        [x, y, ...new Array(dims - 2).fill(0)].join(","),
+        line[x] === "#"
+      );
     }
   });
   return conway;
@@ -93,7 +88,7 @@ const playScenario = async (path: string) => {
     `First exercise: how many cubes are active after the 6th Conway iteration?`,
     "green"
   );
-  const conway = create3DConway(lines);
+  const conway = createConway(lines);
   let neighborMap: NeighborMap;
   let nextConway: ConwayMap = conway;
   for (let i = 0; i < 6; i++) {
@@ -104,7 +99,7 @@ const playScenario = async (path: string) => {
   lineBreak();
 
   title(`Second exercise: same as before but IN 4D!`, "green");
-  const conway4d = create4DConway(lines);
+  const conway4d = createConway(lines, 4);
   let neighborMap4d: NeighborMap;
   let nextConway4d: ConwayMap = conway4d;
   for (let i = 0; i < 6; i++) {
@@ -114,6 +109,20 @@ const playScenario = async (path: string) => {
   result(
     "Number of active hypercubes after 6 iterations:",
     countActive(nextConway4d)
+  );
+  lineBreak();
+
+  title(`Third exercise because I like it: same as before but IN 2D!`, "green");
+  const conway2d = createConway(lines, 2);
+  let neighborMap2d: NeighborMap;
+  let nextConway2d: ConwayMap = conway2d;
+  for (let i = 0; i < 6; i++) {
+    neighborMap2d = getNeighborMap(nextConway2d);
+    nextConway2d = iterateConway(nextConway2d, neighborMap2d);
+  }
+  result(
+    "Number of active squares after 6 iterations:",
+    countActive(nextConway2d)
   );
   lineBreak();
 };
