@@ -22,48 +22,35 @@ const iterateConway = (
   return nextConway;
 };
 
-const get3DNeighborMap = (conway: ConwayMap): NeighborMap => {
-  const neighborMap = new Map<string, number>();
+const populateNeighborMapRecursively = (
+  neighborMap: NeighborMap,
+  fixedPoint: number[],
+  point: number[]
+) => {
+  if (point.length === fixedPoint.length) {
+    if (point.join(",") === fixedPoint.join(",")) return;
+    const coord = point.join(",");
+    if (neighborMap.has(coord)) {
+      neighborMap.set(coord, neighborMap.get(coord) + 1);
+    } else neighborMap.set(coord, 1);
+    return;
+  }
 
-  conway.forEach((isActive, coords) => {
-    const [x, y, z] = coords.split(",").map((str) => parseInt(str));
-    if (isActive) {
-      for (let i = x - 1; i <= x + 1; i++) {
-        for (let j = y - 1; j <= y + 1; j++) {
-          for (let k = z - 1; k <= z + 1; k++) {
-            if (i === x && j === y && k === z) continue;
-            const coord = [i, j, k].join(",");
-            if (neighborMap.has(coord)) {
-              neighborMap.set(coord, neighborMap.get(coord) + 1);
-            } else neighborMap.set(coord, 1);
-          }
-        }
-      }
-    }
-  });
+  const v = fixedPoint[point.length];
+  for (let u = v - 1; u <= v + 1; u++) {
+    populateNeighborMapRecursively(neighborMap, fixedPoint, [...point, u]);
+  }
 
   return neighborMap;
 };
 
-const get4DNeighborMap = (conway: ConwayMap): NeighborMap => {
+const getNeighborMap = (conway: ConwayMap): NeighborMap => {
   const neighborMap = new Map<string, number>();
 
   conway.forEach((isActive, coords) => {
-    const [x, y, z, w] = coords.split(",").map((str) => parseInt(str));
+    const fixedPoint = coords.split(",").map((str) => parseInt(str));
     if (isActive) {
-      for (let i = x - 1; i <= x + 1; i++) {
-        for (let j = y - 1; j <= y + 1; j++) {
-          for (let k = z - 1; k <= z + 1; k++) {
-            for (let l = w - 1; l <= w + 1; l++) {
-              if (i === x && j === y && k === z && l == w) continue;
-              const coord = [i, j, k, l].join(",");
-              if (neighborMap.has(coord)) {
-                neighborMap.set(coord, neighborMap.get(coord) + 1);
-              } else neighborMap.set(coord, 1);
-            }
-          }
-        }
-      }
+      populateNeighborMapRecursively(neighborMap, fixedPoint, []);
     }
   });
 
@@ -110,7 +97,7 @@ const playScenario = async (path: string) => {
   let neighborMap: NeighborMap;
   let nextConway: ConwayMap = conway;
   for (let i = 0; i < 6; i++) {
-    neighborMap = get3DNeighborMap(nextConway);
+    neighborMap = getNeighborMap(nextConway);
     nextConway = iterateConway(nextConway, neighborMap);
   }
   result("Number of active cubes after 6 iterations:", countActive(nextConway));
@@ -121,7 +108,7 @@ const playScenario = async (path: string) => {
   let neighborMap4d: NeighborMap;
   let nextConway4d: ConwayMap = conway4d;
   for (let i = 0; i < 6; i++) {
-    neighborMap4d = get4DNeighborMap(nextConway4d);
+    neighborMap4d = getNeighborMap(nextConway4d);
     nextConway4d = iterateConway(nextConway4d, neighborMap4d);
   }
   result(
