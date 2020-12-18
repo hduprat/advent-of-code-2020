@@ -1,5 +1,6 @@
 import { text, lineBreak, title, result } from "./utils/console";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
+import { toNumber } from "./utils/number";
 
 type Range = [number, number];
 type RangeRule = { name: string; ranges: Range[] };
@@ -9,8 +10,6 @@ declare global {
     in: (range: Range) => boolean;
   }
 }
-
-const toNumber = (n: string): number => parseInt(n, 10);
 
 Number.prototype.in = function (range: Range): boolean {
   return this >= range[0] && this <= range[1];
