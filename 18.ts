@@ -5,6 +5,23 @@ import { toNumber } from "./utils/number";
 const PARENTHESIS_REGEX = /\([^()]+\)/g;
 const EVAL_REGEX = /(\d+)\s+(\+|\*)\s+(\d+)/;
 
+const evaluateAdvanced = (line: string): number => {
+  const test = PARENTHESIS_REGEX.exec(line);
+  if (!test) {
+    // no parentheses, evaluate directly
+    const additionGroups = line.split(" * ");
+    const subResults = additionGroups.map((group) => {
+      const operands = group.split(" + ");
+      return operands.reduce((sum, op) => sum + toNumber(op), 0);
+    });
+    return subResults.reduce((product, subResult) => subResult * product, 1);
+  }
+
+  //else, evaluate parentheses first
+  const subResult = evaluateAdvanced(test[0].slice(1, test[0].length - 1));
+  return evaluateAdvanced(line.replace(test[0], "" + subResult));
+};
+
 const evaluate = (line: string): number => {
   const test = PARENTHESIS_REGEX.exec(line);
   if (!test) {
@@ -34,6 +51,18 @@ const playScenario = async (path: string) => {
     return result + sum;
   }, 0);
   result("result:", N);
+  lineBreak();
+
+  title(
+    `Second exercise: sum the results of each operation IN ADVANCED MODE.`,
+    "green"
+  );
+  const P = lines.reduce((sum, line) => {
+    const result = evaluateAdvanced(line);
+    text(line, "=", result);
+    return result + sum;
+  }, 0);
+  result("result:", P);
   lineBreak();
 };
 
