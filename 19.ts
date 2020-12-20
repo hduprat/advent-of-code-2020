@@ -12,7 +12,12 @@ interface MessageRule {
   message: string;
 }
 
-type Rule = ReferToRule | MessageRule;
+interface RecursiveRule {
+  kind: "recursive";
+  rules: number[];
+}
+
+type Rule = ReferToRule | MessageRule | RecursiveRule;
 
 type RuleMap = Map<number, Rule[]>;
 
@@ -23,13 +28,37 @@ const convertRuleToRegexString = (rule: Rule, ruleMap: RuleMap): string => {
   if (rule.kind === "message") {
     return rule.message;
   }
+  if (rule.kind === "recursive") {
+    return (
+      "(?:" +
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        .map((i) =>
+          rule.rules
+            .map((index): string => {
+              const subRules = ruleMap.get(index);
+              return (
+                "(?:" +
+                subRules
+                  .map((subRule) => convertRuleToRegexString(subRule, ruleMap))
+                  .join("|") +
+                "){" +
+                i +
+                "}"
+              );
+            })
+            .join("")
+        )
+        .join("|") +
+      ")"
+    );
+  }
   return rule.rules
     .map((index): string => {
       const subRules = ruleMap.get(index);
       if (subRules.length === 1)
         return convertRuleToRegexString(subRules[0], ruleMap);
       return (
-        "(" +
+        "(?:" +
         subRules
           .map((subRule) => convertRuleToRegexString(subRule, ruleMap))
           .join("|") +
@@ -94,12 +123,30 @@ const playScenario = async (path: string) => {
   result("result:", compliantMessages);
   lineBreak();
 
-  // title(`Second exercise: ZZZZ.`, "green");
+  title(
+    `Second exercise: change rules 8 and 11 and see what happens.`,
+    "green"
+  );
+  const newLines = path.includes("example")
+    ? await getLinesOfFile(path + ".2")
+    : lines;
+  const {
+    messages: newMessages,
+    ruleMap: modifiedRuleMap,
+  } = collectRulesAndMessages(newLines);
+  modifiedRuleMap.set(8, [{ kind: "recursive", rules: [42] }]);
+  modifiedRuleMap.set(11, [{ kind: "recursive", rules: [42, 31] }]);
+  const modifiedRegex = new RegExp(
+    "^" +
+      convertRuleToRegexString(modifiedRuleMap.get(0)[0], modifiedRuleMap) +
+      "$"
+  );
+  const newCompliantMessages = newMessages.filter((message) =>
+    modifiedRegex.test(message)
+  );
 
-  // // code here
-
-  // result("result:", 0);
-  // lineBreak();
+  result("result:", newCompliantMessages.length);
+  lineBreak();
 };
 
 async function main() {
