@@ -1,5 +1,3 @@
-import { text } from "../utils/console";
-import { colors } from "../utils/consoleColors";
 import { Direction } from "./direction";
 import { getGridVariant } from "./grid";
 
@@ -9,6 +7,8 @@ export interface Tile {
 }
 
 export const tileCache: Map<string, Tile> = new Map<string, Tile>();
+
+export const resetTileCache = () => tileCache.clear();
 
 export const getTileVariant = (tile: Tile, variant: string): Tile => {
   const tileCacheKey = `${tile.id}-${variant}`;

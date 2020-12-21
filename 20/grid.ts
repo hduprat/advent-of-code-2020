@@ -55,15 +55,22 @@ export const getGridVariant = (grid: string[], variant: string): string[] => {
 };
 
 export const combineVariants = (v1: string, v2: string): string => {
+  // text("Combining following variants:", v1, "and", v2);
   const [, r1str, f1] = VARIANT_REGEX.exec(v1);
   const [, r2str, f2] = VARIANT_REGEX.exec(v2);
 
   const [r1, r2] = [r1str, r2str].map(toNumber);
+  // text("Rotation factors:", r1, "and", r2);
+  // text("Flip factors:", f1, "and", f2);
 
   let R = (r1 + r2) % 4;
+  // text("Combined rotation factor:", R);
+
   let F = !f1 ? "" : r2 % 2 === 0 ? f1 : f1 === "H" ? "V" : "H";
+  // text("Modified flip factor:", F);
 
   if (!f2) return `R${R}${F}`;
+  if (!F) return `R${R}${f2}`;
   if (f2 === F) return `R${R}`;
   return `R${(R + 2) % 4}`;
 };

@@ -94,12 +94,13 @@ export const placeTilesOnGrid = (
   finalMap: Map<string, Tile> = new Map<string, Tile>(),
   coords: string = "0,0"
 ) => {
-  if (finalMap.has(coords)) return;
-  const { id, variant } = extractIdAndVariant(startingTileVariant);
-  finalMap.set(coords, getTileVariant(tileMap.get(id), variant));
-  if (finalMap.size === tileMap.size) return;
   // lineBreak();
+  // text("Step", finalMap.size + 1);
+  const { id, variant } = extractIdAndVariant(startingTileVariant);
+  if (finalMap.has(coords)) return;
+  finalMap.set(coords, getTileVariant(tileMap.get(id), variant));
   // text("Tile", startingTileVariant, "has been set to coords", coords);
+  if (finalMap.size === tileMap.size) return;
 
   adjGraph.get(id).forEach((tileIdAndVariant, direction) => {
     const { id: nextId, variant: nextVariant } = extractIdAndVariant(
