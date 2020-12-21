@@ -39,6 +39,49 @@ const buildAllergenPossibilityMap = (
   };
 };
 
+const findPotentiallyAllergenicIngredients = (
+  allergenPossibilities: AllergenPossibilityMap
+): Map<string, string[]> => {
+  const potentiallyAllergenicIngredients = new Map<string, string[]>();
+
+  allergenPossibilities.forEach((ingredientLists, allergen) => {
+    potentiallyAllergenicIngredients.set(
+      allergen,
+      intersect(...ingredientLists)
+    );
+  });
+
+  return potentiallyAllergenicIngredients;
+};
+
+const associateIngredientsWithAllergens = (
+  allergenMap: Map<string, string[]>
+): Map<string, string> => {
+  const allergenicIngredientsMap = new Map<string, string>();
+  const allergenicIngredientsArray: string[] = [];
+
+  do {
+    allergenMap.forEach((ingredients, allergen) => {
+      if (ingredients.length === 0) return;
+
+      if (ingredients.length === 1) {
+        allergenicIngredientsMap.set(allergen, ingredients[0]);
+        allergenicIngredientsArray.push(ingredients[0]);
+        return;
+      }
+
+      allergenMap.set(
+        allergen,
+        ingredients.filter(
+          (ingredient) => !allergenicIngredientsArray.includes(ingredient)
+        )
+      );
+    });
+  } while (allergenicIngredientsMap.size < allergenMap.size);
+
+  return allergenicIngredientsMap;
+};
+
 const playScenario = async (path: string) => {
   const lines = await getLinesOfFile(path);
   const {
@@ -47,9 +90,16 @@ const playScenario = async (path: string) => {
   } = buildAllergenPossibilityMap(lines);
   text(allergenPossibilities);
 
+  const potentiallyAllergenicIngredientsByAllergen = findPotentiallyAllergenicIngredients(
+    allergenPossibilities
+  );
+  text(
+    "potentially allergenic ingredients by allergen:",
+    potentiallyAllergenicIngredientsByAllergen
+  );
   const potentiallyAllergenicIngredients = new Set<string>();
-  allergenPossibilities.forEach((ingredientLists) => {
-    intersect(...ingredientLists).forEach((ingredient) => {
+  potentiallyAllergenicIngredientsByAllergen.forEach((ingredientList) => {
+    ingredientList.forEach((ingredient) => {
       potentiallyAllergenicIngredients.add(ingredient);
     });
   });
@@ -65,12 +115,22 @@ const playScenario = async (path: string) => {
   result("result:", safeIngredients.length);
   lineBreak();
 
-  // title(`Second exercise: ZZZZ.`, "green");
+  title(
+    `Second exercise: list allergenic ingredients sorted by allergen.`,
+    "green"
+  );
 
-  // // code here
+  const allergenicIngredients = associateIngredientsWithAllergens(
+    potentiallyAllergenicIngredientsByAllergen
+  );
 
-  // result("result:", 0);
-  // lineBreak();
+  const sortedMap = new Map<string, string>(
+    [...allergenicIngredients.entries()].sort()
+  );
+  text(sortedMap);
+
+  result("result:", [...sortedMap.values()].join(","));
+  lineBreak();
 };
 
 async function main() {
