@@ -31,3 +31,6 @@ export const getImage = (
 
   return result;
 };
+
+export const countHashes = (image: string[]): number =>
+  image.reduce((count, line) => count + (line.match(/#/g) || []).length, 0);

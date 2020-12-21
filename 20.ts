@@ -1,18 +1,17 @@
 import { lineBreak, title, result, text } from "./utils/console";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
-import { Tile } from "./20/tile";
+import { resetTileCache, Tile } from "./20/tile";
 import {
   AdjacenceGraph,
   buildAdjacenceGraph,
   placeTilesOnGrid,
 } from "./20/adjacence";
-import { getImage } from "./20/image";
+import { countHashes, getImage } from "./20/image";
 import {
   getAllSeaMonstersCoordinates,
-  getPotentialSeaMonstersCoordinates,
   highlightSeaMonsterInImage,
+  SEA_MONSTER_HASHES_COUNT,
 } from "./20/seaMonster";
-import { rotateGridOnce } from "./20/grid";
 
 const TILE_TITLE_REGEX = /^Tile (\d+):$/;
 
@@ -49,6 +48,7 @@ const getCornerIds = (adjGraph: AdjacenceGraph): string[] => {
 };
 
 const playScenario = async (path: string) => {
+  resetTileCache();
   const lines = await getLinesOfFile(path);
   const tileMap = getTiles(lines);
   const graph = buildAdjacenceGraph(tileMap);
@@ -72,26 +72,30 @@ const playScenario = async (path: string) => {
   );
   text("First, reconstruct the image.");
   const arrangement = new Map<string, Tile>();
-  placeTilesOnGrid(cornerIds[0], graph, tileMap, arrangement);
+  placeTilesOnGrid(cornerIds[1], graph, tileMap, arrangement);
 
   // displayArrangementMapIds(arrangement);
   lineBreak();
   const image = getImage(arrangement, lines[1].length);
-  rotateGridOnce(image).forEach((line) => text(line));
-
-  lineBreak();
 
   const {
     result: seaMonsterCoords,
     image: correctlyOrientedImage,
   } = getAllSeaMonstersCoordinates(image);
-  result("sea monsters are probably here:", JSON.stringify(seaMonsterCoords));
+  text(
+    "Found",
+    seaMonsterCoords.length,
+    "sea monsters, they are probably here:"
+  );
   lineBreak();
   highlightSeaMonsterInImage(correctlyOrientedImage, seaMonsterCoords);
-  // // code here
 
-  // result("result:", 0);
-  // lineBreak();
+  text("There are", countHashes(image), "hashes in the image.");
+  result(
+    "Water roughness is:",
+    countHashes(image) - seaMonsterCoords.length * SEA_MONSTER_HASHES_COUNT
+  );
+  lineBreak();
 };
 
 async function main() {
@@ -99,12 +103,12 @@ async function main() {
   await playScenario("input/20.example");
   lineBreak();
 
-  // title("----------------------------------");
-  // lineBreak();
+  title("----------------------------------");
+  lineBreak();
 
-  // title("Real scenario", "cyan");
-  // await playScenario("input/20");
-  // lineBreak();
+  title("Real scenario", "cyan");
+  await playScenario("input/20");
+  lineBreak();
 }
 
 main();

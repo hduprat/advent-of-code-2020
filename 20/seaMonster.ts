@@ -3,10 +3,11 @@ import { colors, modifiers } from "../utils/consoleColors";
 import { flipGrid, rotateGridOnce } from "./grid";
 
 const SEA_MONSTER_UPPER_REGEX = /..................#./;
-const SEA_MONSTER_MIDDLE_REGEX = /#....##....##....###/;
+const SEA_MONSTER_MIDDLE_REGEX = /#....##....##....###/g;
 const SEA_MONSTER_LOWER_REGEX = /.#..#..#..#..#..#.../;
 
 const SEA_MONSTER_LENGTH = 20;
+export const SEA_MONSTER_HASHES_COUNT = 15;
 
 const HIGHLIGHT = modifiers.bold + colors.red + colors.bgRed;
 const RESET = modifiers.reset;
@@ -18,26 +19,29 @@ interface Point {
 
 export const getPotentialSeaMonstersCoordinates = (image: string[]): Point[] =>
   image.slice(1, image.length).reduce((foundCoordinates, line, y) => {
-    const result = line.match(SEA_MONSTER_MIDDLE_REGEX);
-    if (!result) return foundCoordinates;
-    const x = result.index;
-    if (
-      !image[y].slice(x, x + SEA_MONSTER_LENGTH).match(SEA_MONSTER_UPPER_REGEX)
-    )
-      return foundCoordinates;
-    if (
-      !image[y + 2]
-        .slice(x, x + SEA_MONSTER_LENGTH)
-        .match(SEA_MONSTER_LOWER_REGEX)
-    )
-      return foundCoordinates;
-    return [
-      ...foundCoordinates,
-      {
+    const coords = [];
+    let result: RegExpExecArray;
+    while ((result = SEA_MONSTER_MIDDLE_REGEX.exec(line)) !== null) {
+      const x = result.index;
+      if (
+        !image[y]
+          .slice(x, x + SEA_MONSTER_LENGTH)
+          .match(SEA_MONSTER_UPPER_REGEX)
+      )
+        continue;
+      if (
+        !image[y + 2]
+          .slice(x, x + SEA_MONSTER_LENGTH)
+          .match(SEA_MONSTER_LOWER_REGEX)
+      )
+        continue;
+
+      coords.push({
         x: result.index,
         y: y + 1,
-      },
-    ];
+      });
+    }
+    return [...foundCoordinates, ...coords];
   }, []);
 
 export const getAllSeaMonstersCoordinates = (
@@ -58,42 +62,16 @@ export const getAllSeaMonstersCoordinates = (
   return null;
 };
 
-const highlightUpperBody = (line: string, x: number) => {
-  let highlightedLine = line.slice(0, x + 18);
-  highlightedLine += HIGHLIGHT + line[x + 18] + RESET;
-  highlightedLine += line.slice(x + 19);
-  text(highlightedLine);
+const isUpperBodyPoint = (x: number, monsterX: number): boolean => {
+  return x === monsterX + 18;
 };
 
-const highlightMiddleBody = (line: string, x: number) => {
-  let highlightedLine = line.slice(0, x);
-  highlightedLine += HIGHLIGHT + line[x] + RESET;
-  highlightedLine += line.slice(x + 1, x + 5);
-  highlightedLine += HIGHLIGHT + line.slice(x + 5, x + 7) + RESET;
-  highlightedLine += line.slice(x + 7, x + 11);
-  highlightedLine += HIGHLIGHT + line.slice(x + 11, x + 13) + RESET;
-  highlightedLine += line.slice(x + 13, x + 17);
-  highlightedLine += HIGHLIGHT + line.slice(x + 17, x + 20) + RESET;
-  highlightedLine += line.slice(x + 20);
-  text(highlightedLine);
+const isMonsterBodyPoint = (x: number, monsterX: number): boolean => {
+  return [0, 5, 6, 11, 12, 17, 18, 19].includes(x - monsterX);
 };
 
-const highlightLowerBody = (line: string, x: number) => {
-  let highlightedLine = line.slice(0, x + 1);
-  highlightedLine += HIGHLIGHT + line[x + 1] + RESET;
-  highlightedLine += line.slice(x + 2, x + 4);
-  highlightedLine += HIGHLIGHT + line[x + 4] + RESET;
-  highlightedLine += line.slice(x + 5, x + 7);
-  highlightedLine += HIGHLIGHT + line[x + 7] + RESET;
-  highlightedLine += line.slice(x + 8, x + 10);
-  highlightedLine += HIGHLIGHT + line[x + 10] + RESET;
-  highlightedLine += line.slice(x + 11, x + 13);
-  highlightedLine += HIGHLIGHT + line[x + 13] + RESET;
-  highlightedLine += line.slice(x + 14, x + 16);
-  highlightedLine += HIGHLIGHT + line[x + 16] + RESET;
-  highlightedLine += line.slice(x + 17);
-
-  text(highlightedLine);
+const isLowerBodyPoint = (x: number, monsterX: number): boolean => {
+  return [1, 4, 7, 10, 13, 16].includes(x - monsterX);
 };
 
 export const highlightSeaMonsterInImage = (
@@ -101,21 +79,32 @@ export const highlightSeaMonsterInImage = (
   seaMonsters: Point[]
 ): void => {
   image.forEach((line, y) => {
-    const foundUpper = seaMonsters.find((seaMonster) => seaMonster.y - 1 === y);
-    if (foundUpper) {
-      highlightUpperBody(line, foundUpper.x);
-      return;
+    const foundUpper = seaMonsters.filter(
+      (seaMonster) => seaMonster.y - 1 === y
+    );
+    const foundMonster = seaMonsters.filter((seaMonster) => seaMonster.y === y);
+    const foundLower = seaMonsters.filter(
+      (seaMonster) => seaMonster.y + 1 === y
+    );
+    let highlightedLine = "";
+    for (let i = 0; i < line.length; i++) {
+      const isUpper =
+        foundUpper.length &&
+        foundUpper.some((coord) => isUpperBodyPoint(i, coord.x));
+      const isMonster =
+        foundMonster.length &&
+        foundMonster.some((coord) => isMonsterBodyPoint(i, coord.x));
+      const isLower =
+        foundLower.length &&
+        foundLower.some((coord) => isLowerBodyPoint(i, coord.x));
+      if (isUpper) highlightedLine += HIGHLIGHT + line[i] + RESET;
+
+      if (isMonster) highlightedLine += HIGHLIGHT + line[i] + RESET;
+
+      if (isLower) highlightedLine += HIGHLIGHT + line[i] + RESET;
+
+      if (!isUpper && !isMonster && !isLower) highlightedLine += line[i];
     }
-    const foundMonster = seaMonsters.find((seaMonster) => seaMonster.y === y);
-    if (foundMonster) {
-      highlightMiddleBody(line, foundMonster.x);
-      return;
-    }
-    const foundLower = seaMonsters.find((seaMonster) => seaMonster.y + 1 === y);
-    if (foundLower) {
-      highlightLowerBody(line, foundLower.x);
-      return;
-    }
-    text(line);
+    text(highlightedLine);
   });
 };
