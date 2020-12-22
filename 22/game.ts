@@ -1,14 +1,22 @@
-import { lineBreak, text } from "../utils/console";
+import { lineBreak, result, text } from "../utils/console";
 import { colors, modifiers } from "../utils/consoleColors";
 
-export type Game = { round: number; p1: number[]; p2: number[] };
+export type Game = {
+  id: number;
+  round: number;
+  p1: number[];
+  p2: number[];
+  roundHistory: { p1: number[]; p2: number[] }[];
+};
 export type RuleVariant = (game: Game) => 1 | 2;
 
 export const initGame = (input: string[]): Game => {
   const game: Game = {
+    id: 1,
     round: 1,
     p1: [],
     p2: [],
+    roundHistory: [],
   };
 
   let i = 1;
@@ -52,6 +60,7 @@ export const playRound = (game: Game, rule: RuleVariant): 1 | 2 | null => {
     winningPlayer === 2
       ? [...game.p2.slice(1), game.p2[0], game.p1[0]]
       : game.p2.slice(1);
+  game.roundHistory.push({ p1: game.p1, p2: game.p2 });
   game.p1 = newP1;
   game.p2 = newP2;
   game.round++;
@@ -61,6 +70,17 @@ export const playRound = (game: Game, rule: RuleVariant): 1 | 2 | null => {
   if (newP2.length === 0) return 1;
 
   return null;
+};
+
+export const playGame = (game: Game, rule: RuleVariant) => {
+  let winner: 1 | 2 | null = null;
+  do {
+    winner = playRound(game, rule);
+  } while (winner === null);
+
+  text("The winner is Player", winner);
+
+  result("Winner score:", calculatePlayerScore(game, winner));
 };
 
 export const calculatePlayerScore = (game: Game, playerId: 1 | 2): number => {
