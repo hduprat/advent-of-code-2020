@@ -1,5 +1,5 @@
 import { calculatePlayerScore, initGame, playGame, playRound } from "./22/game";
-import { classicCombat } from "./22/ruleVariants";
+import { classicCombat, recursiveCombat } from "./22/ruleVariants";
 import { lineBreak, title, result, text } from "./utils/console";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
 
@@ -11,15 +11,23 @@ const playScenario = async (path: string) => {
     `First exercise: play the card game and calculate the winner's score.`,
     "green"
   );
-  playGame(game, classicCombat);
+  const winner = playGame(game, classicCombat);
+  text("The winner is Player", winner);
+  result("Winner score:", calculatePlayerScore(game, winner));
   lineBreak();
 
-  // title(`Second exercise: ZZZZ.`, "green");
+  title(
+    `Second exercise: play the RECURSIVE card game and calculate the winner's score.`,
+    "green"
+  );
 
-  // // code here
+  const recursiveGame = initGame(lines);
+  const recursiveWinner = playGame(recursiveGame, recursiveCombat);
+  text("The winner is Player", recursiveWinner);
+  result("Winner score:", calculatePlayerScore(recursiveGame, recursiveWinner));
 
-  // result("result:", 0);
-  // lineBreak();
+  result("result:", 0);
+  lineBreak();
 };
 
 async function main() {
