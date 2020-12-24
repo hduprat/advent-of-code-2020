@@ -1,8 +1,9 @@
 import {
   countBlackTiles,
   fillHexTiling,
+  flipGreatLivingHexTiling,
 } from "./24/hexTiles";
-import { lineBreak, title, result } from "./utils/console";
+import { lineBreak, title, result, text } from "./utils/console";
 import { getLinesOfFile } from "./utils/getLinesOfFile";
 
 const playScenario = async (path: string) => {
@@ -15,6 +16,20 @@ const playScenario = async (path: string) => {
   result("Number of black tiles:", countBlackTiles(tiling));
   lineBreak();
 
+  title(
+    `Second exercise: determine the number of black tile in the Great Living Hex Tiling after 100 days.`,
+    "green"
+  );
+
+  for (let day = 1; day <= 100; day++) {
+    flipGreatLivingHexTiling(tiling, false);
+    if (day < 10 || day % 10 === 0)
+      text(`Day ${day}:`, countBlackTiles(tiling));
+  }
+  lineBreak();
+
+  result("Number of black tiles on the 100th day:", countBlackTiles(tiling));
+  lineBreak();
 };
 
 async function main() {
